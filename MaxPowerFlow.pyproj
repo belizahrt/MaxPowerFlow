@@ -5,8 +5,7 @@
     <ProjectGuid>4cf3805c-6378-4d3c-a34e-67ff5a7a7e7f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>src\MaxPowerFlow.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>..\MaxPowerFlow;src;Tests</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>MaxPowerFlow</Name>
@@ -16,8 +15,9 @@
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.\Tests</UnitTestRootDirectory>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-rg2 "D:\Repositories\MaxPowerFlow\Tests\assets\regime.rg2" -rg2template "D:\Repositories\MaxPowerFlow\assets\rastr_templates\режим.rg2" -faults "Z:\sad asdas\asd.rg2"</CommandLineArguments>
+    <CommandLineArguments>-rg2 "D:\Repositories\MaxPowerFlow\Tests\assets\regime.rg2" -rg2template "D:\Repositories\MaxPowerFlow\src\assets\rastr_templates\режим.rg2"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,10 +29,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="src\MaxPowerFlow.py" />
-    <Compile Include="tests\__init__.py">
+    <Compile Include="src\InitDataHelper.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="tests\test_1.py">
+    <Compile Include="src\RastrSingleton.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\test_1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -51,7 +57,7 @@
     <Folder Include="src\assets\" />
     <Folder Include="src\assets\rastr_templates\" />
     <Folder Include="src\" />
-    <Folder Include="tests\" />
+    <Folder Include="Tests\" />
     <Folder Include="Tests\assets\" />
   </ItemGroup>
   <ItemGroup>
