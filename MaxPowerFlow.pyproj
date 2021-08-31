@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4cf3805c-6378-4d3c-a34e-67ff5a7a7e7f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>MaxPowerFlow.py</StartupFile>
+    <StartupFile>src\MaxPowerFlow.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -16,7 +16,7 @@
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.\Tests</UnitTestRootDirectory>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-arg1</CommandLineArguments>
+    <CommandLineArguments>-rg2 "D:\Repositories\MaxPowerFlow\Tests\assets\regime.rg2" -rg2template "D:\Repositories\MaxPowerFlow\assets\rastr_templates\режим.rg2" -faults "Z:\sad asdas\asd.rg2"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -28,7 +28,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="MaxPowerFlow.py" />
+    <Compile Include="src\MaxPowerFlow.py" />
     <Compile Include="tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -50,6 +50,7 @@
   <ItemGroup>
     <Folder Include="assets\" />
     <Folder Include="assets\rastr_templates\" />
+    <Folder Include="src\" />
     <Folder Include="tests\" />
     <Folder Include="Tests\assets\" />
   </ItemGroup>
