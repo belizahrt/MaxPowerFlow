@@ -48,16 +48,16 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="assets\" />
-    <Folder Include="assets\rastr_templates\" />
+    <Folder Include="src\assets\" />
+    <Folder Include="src\assets\rastr_templates\" />
     <Folder Include="src\" />
     <Folder Include="tests\" />
     <Folder Include="Tests\assets\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="assets\rastr_templates\режим.rg2" />
-    <Content Include="assets\rastr_templates\сечения.sch" />
-    <Content Include="assets\rastr_templates\траектория утяжеления.ut2" />
+    <Content Include="src\assets\rastr_templates\режим.rg2" />
+    <Content Include="src\assets\rastr_templates\сечения.sch" />
+    <Content Include="src\assets\rastr_templates\траектория утяжеления.ut2" />
     <Content Include="Tests\assets\faults.json" />
     <Content Include="Tests\assets\flowgate.json" />
     <Content Include="Tests\assets\regime.rg2" />
