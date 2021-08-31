@@ -29,10 +29,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="MaxPowerFlow.py" />
-    <Compile Include="Tests\__init__.py">
+    <Compile Include="tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tests\test_1.py">
+    <Compile Include="tests\test_1.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -50,7 +50,7 @@
   <ItemGroup>
     <Folder Include="assets\" />
     <Folder Include="assets\rastr_templates\" />
-    <Folder Include="Tests\" />
+    <Folder Include="tests\" />
     <Folder Include="Tests\assets\" />
   </ItemGroup>
   <ItemGroup>
