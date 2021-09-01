@@ -28,12 +28,13 @@ def DoInitializeData(argv):
 
     rgFilesHandler.SetNext(bgFileHandler)
 
-    #try:
-    for key in params:
-        if rgFilesHandler.Handle(key, params[key]) == -1:
-            return -1
-    #except:
-    #    return -1
+    try:
+        for key in params:
+            if rgFilesHandler.Handle(key, params[key]) == -1:
+                return -1
+    except Exception as e:
+        print('Exception while initialization data: ', e)
+        return -1
 
     return 0
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Optional
 
 import json
 
@@ -22,7 +22,6 @@ class AbstractHandler(IDataHandler):
     def SetNext(self, handler: IDataHandler) -> IDataHandler:
         self._next_handler = handler
         return handler
-
 
     @abstractmethod
     def Handle(self, dataSource: str, data: str) -> int:
@@ -55,9 +54,9 @@ class RegimeFilesHandler(AbstractHandler):
             return super().Handle(dataSource, data)
 
 
-class BranchGroupsFilesHandler(AbstractHandler):
+class JsonFilesHandler(AbstractHandler):
 
-    def __readJson(self, path):
+    def _readJson(self, path):
         result = {}
 
         with open(path, "r") as read_file:
@@ -66,8 +65,25 @@ class BranchGroupsFilesHandler(AbstractHandler):
         return result
 
     def Handle(self, dataSource: str, data: str) -> int:
+        super().Handle(dataSource, data)
+
+
+class BranchGroupsFilesHandler(JsonFilesHandler):
+
+    def Handle(self, dataSource: str, data: str) -> int:
         if dataSource == "-bg":
-            branches = self.__readJson(data)
+            branches = self._readJson(data)
+            RastrInstance().MakeBranchGroup(branches)
+            return 0
+        else:
+            return super().Handle(dataSource, data)
+
+
+class OutagesFilesHandler(JsonFilesHandler):
+
+    def Handle(self, dataSource: str, data: str) -> int:
+        if dataSource == "-outages":
+            branches = self._readJson(data)
             RastrInstance().MakeBranchGroup(branches)
             return 0
         else:
