@@ -24,13 +24,16 @@ def DoInitializeData(argv):
     params = ReadCmdLine(argv)
 
     rgFilesHandler = InitDataHelper.RegimeFilesHandler()
+    bgFileHandler = InitDataHelper.BranchGroupsFilesHandler()
 
-    try:
-        for key in params:
-            if rgFilesHandler.Handle(key, params[key]) == -1:
-                return -1
-    except:
-        return -1
+    rgFilesHandler.SetNext(bgFileHandler)
+
+    #try:
+    for key in params:
+        if rgFilesHandler.Handle(key, params[key]) == -1:
+            return -1
+    #except:
+    #    return -1
 
     return 0
 

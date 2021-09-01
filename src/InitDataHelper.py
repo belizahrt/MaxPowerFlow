@@ -2,6 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import json
+
 from RastrSingleton import RastrInstance
 
 class IDataHandler(ABC):
@@ -23,7 +25,7 @@ class AbstractHandler(IDataHandler):
 
 
     @abstractmethod
-    def Handle(self, dataSource: Any, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> int:
         if self._next_handler:
             return self._next_handler.Handle(dataSource, data)
         
@@ -34,7 +36,7 @@ class RegimeFilesHandler(AbstractHandler):
     __rg2File: str = None
     __rg2TemplateFile: str = None
 
-    def Handle(self, dataSource: Any, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> int:
         if dataSource == "-rg2":
             self.__rg2File = data
             if self.__rg2TemplateFile == None:
@@ -49,5 +51,24 @@ class RegimeFilesHandler(AbstractHandler):
             self.__rg2File = None
             self.__rg2TemplateFile = None
             return result
+        else:
+            return super().Handle(dataSource, data)
+
+
+class BranchGroupsFilesHandler(AbstractHandler):
+
+    def __readJson(self, path):
+        result = {}
+
+        with open(path, "r") as read_file:
+            result = json.load(read_file)
+
+        return result
+
+    def Handle(self, dataSource: str, data: str) -> int:
+        if dataSource == "-bg":
+            branches = self.__readJson(data)
+            RastrInstance().MakeBranchGroup(branches)
+            return 0
         else:
             return super().Handle(dataSource, data)
