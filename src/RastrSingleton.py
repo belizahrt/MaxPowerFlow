@@ -15,7 +15,6 @@ class RastrMeta(type):
 
 class RastrInstance(metaclass=RastrMeta):
     __outages: dict = None
-    __bgNum: int = 0
 
     def __init__(self):
         self.__rastr = win32com.client.Dispatch('Astra.Rastr')
@@ -29,7 +28,10 @@ class RastrInstance(metaclass=RastrMeta):
         __bgNum = 0
 
     def GetBranchGroupNum(self):
-        return self.__bgNum
+        return self.__rastr.Tables('sechen').size
+
+    def GetCurrentPFVVId(self):
+        return self.__rastr.Tables('ut_node').size
 
     def Load(self, file: str, template: str):
         try:
@@ -53,8 +55,8 @@ class RastrInstance(metaclass=RastrMeta):
         try:
             # make branchgroup in table sechen
             self.__rastr.Tables('sechen').AddRow()
-            self.__bgNum += 1
-            self.__rastr.Tables('sechen').Cols('ns').SetZ(0, self.__bgNum)
+            ns = self.__rastr.Tables('sechen').size
+            self.__rastr.Tables('sechen').Cols('ns').SetZ(0, ns)
             self.__rastr.Tables('sechen').Cols('name').SetZ(0, name)
         except Exception as e:
             return e
@@ -69,6 +71,27 @@ class RastrInstance(metaclass=RastrMeta):
             self.__rastr.Tables('grline').Cols('ns').SetZ(i, bgNum)
             self.__rastr.Tables('grline').Cols('ip').SetZ(i, ip)
             self.__rastr.Tables('grline').Cols('iq').SetZ(i, iq)
+        except Exception as e:
+            return e
+
+        return None
+
+    # PFVV - Power Flow Variance Vector
+    def AddNodePFVV(self, nodeNum, recalcTan):
+        try:
+            # add vector in table ut_node
+            i = self.__rastr.Tables('ut_node').size
+            self.__rastr.Tables('ut_node').AddRow()
+            self.__rastr.Tables('ut_node').Cols('ny').SetZ(i, nodeNum)
+            self.__rastr.Tables('ut_node').Cols('tg').SetZ(i, recalcTan)
+        except Exception as e:
+            return e
+
+        return None
+
+    def SetNodePFVVParam(self, id, param, value):
+        try:
+            self.__rastr.Tables('ut_node').Cols(param).SetZ(id, value)
         except Exception as e:
             return e
 

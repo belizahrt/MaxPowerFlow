@@ -96,3 +96,13 @@ class OutagesFilesHandler(JsonFilesHandler):
             return RastrInstance().SetOutages(self._readJson(data))
         else:
             return super().Handle(dataSource, data)
+
+
+class PFVVFilesHandler(AbstractHandler):
+    __nodeIdMap: dict = {}
+
+    def Handle(self, dataSource: str, data: str) -> str:
+        if dataSource == "-pfvv":
+            return RastrInstance().SetOutages(self._readJson(data))
+        else:
+            return super().Handle(dataSource, data)
