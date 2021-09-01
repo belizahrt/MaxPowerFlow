@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import json
+import csv
 
 from RastrSingleton import RastrInstance
 
@@ -24,26 +25,27 @@ class AbstractHandler(IDataHandler):
         return handler
 
     @abstractmethod
-    def Handle(self, dataSource: str, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> str:
         if self._next_handler:
             return self._next_handler.Handle(dataSource, data)
         
-        return -1
+        return 'No data handler for ' + dataSource
 
 
 class RegimeFilesHandler(AbstractHandler):
     __rg2File: str = None
     __rg2TemplateFile: str = None
 
-    def Handle(self, dataSource: str, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> str:
+        # waiting for linked param (-rg2 + -rg2template)
         if dataSource == "-rg2":
             self.__rg2File = data
             if self.__rg2TemplateFile == None:
-                return 0
+                return None
         elif dataSource == "-rg2template":
             self.__rg2TemplateFile = data
             if self.__rg2File == None:
-                return 0
+                return None
 
         if self.__rg2File and self.__rg2TemplateFile:
             result = RastrInstance().Load(self.__rg2File, self.__rg2TemplateFile)
@@ -64,27 +66,33 @@ class JsonFilesHandler(AbstractHandler):
 
         return result
 
-    def Handle(self, dataSource: str, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> str:
         super().Handle(dataSource, data)
 
 
 class BranchGroupsFilesHandler(JsonFilesHandler):
 
-    def Handle(self, dataSource: str, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> str:
         if dataSource == "-bg":
             branches = self._readJson(data)
-            RastrInstance().MakeBranchGroup(branches)
-            return 0
+            status = RastrInstance().MakeBranchGroup('MaxPFBranchGroup')
+
+            if status == None:
+                for branch in branches:
+                    status = RastrInstance().AddBranchToBranchGroup(
+                        RastrInstance().GetBranchGroupNum(), 
+                        branches[branch].get('ip', 0), 
+                        branches[branch].get('iq', 0))
+
+            return status
         else:
             return super().Handle(dataSource, data)
 
 
 class OutagesFilesHandler(JsonFilesHandler):
 
-    def Handle(self, dataSource: str, data: str) -> int:
+    def Handle(self, dataSource: str, data: str) -> str:
         if dataSource == "-outages":
-            branches = self._readJson(data)
-            RastrInstance().MakeBranchGroup(branches)
-            return 0
+            return RastrInstance().SetOutages(self._readJson(data))
         else:
             return super().Handle(dataSource, data)

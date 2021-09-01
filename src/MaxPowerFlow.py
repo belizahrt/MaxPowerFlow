@@ -28,18 +28,15 @@ def DoInitializeData(argv):
 
     rgFilesHandler.SetNext(bgFileHandler)
 
-    try:
-        for key in params:
-            if rgFilesHandler.Handle(key, params[key]) == -1:
-                return -1
-    except Exception as e:
-        print('Exception while initialization data: ', e)
-        return -1
+    for key in params:
+        if rgFilesHandler.Handle(key, params[key]) != None:
+            return -1
 
     return 0
 
 
 if DoInitializeData(sys.argv) != -1:
     print('rgm = ', RastrInstance()._RastrInstance__rastr.rgm(''))
+    RastrInstance().SaveAll('test')
 else:
     print('Failed to initialize data from args')
