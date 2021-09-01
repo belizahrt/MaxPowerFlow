@@ -26,8 +26,9 @@ def DoInitializeData(argv):
     rgFilesHandler = InitDataHelper.RegimeFilesHandler()
     bgFileHandler = InitDataHelper.BranchGroupsFilesHandler()
     outageFileHandler = InitDataHelper.OutagesFilesHandler()
+    pfvvFileHandler = InitDataHelper.PFVVFilesHandler()
 
-    rgFilesHandler.SetNext(bgFileHandler).SetNext(outageFileHandler)
+    rgFilesHandler.SetNext(bgFileHandler).SetNext(outageFileHandler).SetNext(pfvvFileHandler)
 
     for key in params:
         if rgFilesHandler.Handle(key, params[key]) != None:

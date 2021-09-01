@@ -15,7 +15,7 @@
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.\Tests</UnitTestRootDirectory>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-rg2 "D:\Repositories\MaxPowerFlow\Tests\assets\regime.rg2" -rg2template "D:\Repositories\MaxPowerFlow\src\assets\rastr_templates\режим.rg2" -bg "D:\Repositories\MaxPowerFlow\Tests\assets\flowgate.json" -outages "D:\Repositories\MaxPowerFlow\Tests\assets\faults.json"</CommandLineArguments>
+    <CommandLineArguments>-rg2 "D:\Repositories\MaxPowerFlow\Tests\assets\regime.rg2" -rg2template "D:\Repositories\MaxPowerFlow\src\assets\rastr_templates\режим.rg2" -bg "D:\Repositories\MaxPowerFlow\Tests\assets\flowgate.json" -outages "D:\Repositories\MaxPowerFlow\Tests\assets\faults.json" -pfvv "D:\Repositories\MaxPowerFlow\Tests\assets\vector.csv"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>

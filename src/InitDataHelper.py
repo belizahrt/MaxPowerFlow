@@ -103,6 +103,24 @@ class PFVVFilesHandler(AbstractHandler):
 
     def Handle(self, dataSource: str, data: str) -> str:
         if dataSource == "-pfvv":
-            return RastrInstance().SetOutages(self._readJson(data))
+            with open(data) as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    node = row.get('node', 0)
+                    if node not in self.__nodeIdMap:
+                        RastrInstance().AddNodePFVV(node, row.get('tg', 0))
+
+                        id = RastrInstance().GetCurrentPFVVId()-1
+                        variable = row.get('variable', 'pn')
+                        RastrInstance().SetNodePFVVParam(id, variable, float(row.get('value', 0)))
+
+                        self.__nodeIdMap[node] = id
+                    else:
+                        id = self.__nodeIdMap[node]
+                        variable = row.get('variable', 'pn')
+                        RastrInstance().SetNodePFVVParam(id, variable, float(row.get('value', 0)))
+
+            return None
         else:
             return super().Handle(dataSource, data)
