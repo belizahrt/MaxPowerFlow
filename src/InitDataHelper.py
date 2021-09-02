@@ -48,7 +48,8 @@ class RegimeFilesHandler(AbstractHandler):
                 return None
 
         if self.__rg2File and self.__rg2TemplateFile:
-            result = RastrInstance().Load(self.__rg2File, self.__rg2TemplateFile)
+            result = RastrInstance() \
+                .Load(self.__rg2File, self.__rg2TemplateFile)
             self.__rg2File = None
             self.__rg2TemplateFile = None
             return result
@@ -102,25 +103,26 @@ class PFVVFilesHandler(AbstractHandler):
     __nodeIdMap: dict = {}
 
     def Handle(self, dataSource: str, data: str) -> str:
+        status = None
         if dataSource == "-pfvv":
             with open(data) as csvfile:
                 reader = csv.DictReader(csvfile)
 
                 for row in reader:
                     node = row.get('node', 0)
+                    id = 0
                     if node not in self.__nodeIdMap:
-                        RastrInstance().AddNodePFVV(node, row.get('tg', 0))
-
-                        id = RastrInstance().GetCurrentPFVVId()-1
-                        variable = row.get('variable', 'pn')
-                        RastrInstance().SetNodePFVVParam(id, variable, float(row.get('value', 0)))
-
                         self.__nodeIdMap[node] = id
+
+                        status = RastrInstance().AddNodePFVV(node, row.get('tg', 0))
+                        id = RastrInstance().GetCurrentPFVVId()-1
                     else:
                         id = self.__nodeIdMap[node]
-                        variable = row.get('variable', 'pn')
-                        RastrInstance().SetNodePFVVParam(id, variable, float(row.get('value', 0)))
+                        
+                    variable = row.get('variable', 'pn')
+                    status = RastrInstance() \
+                        .SetNodePFVVParam(id, variable, float(row.get('value', 0)))
 
-            return None
+            return status
         else:
             return super().Handle(dataSource, data)
