@@ -41,6 +41,11 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
+    def RestorePFToggle(self):
+        toggle = self.__rastr.GetToggle()
+        if len(toggle.GetPositions()) > 0:
+            toggle.MoveOnPosition(1)
+
     def SaveAll(self, file: str):
         try:
             self.__rastr.Save(file + '.rg2', 'assets\\rastr_templates\\режим.rg2')

@@ -52,6 +52,9 @@ def HelpMessage():
 
 if DoInitializeData(sys.argv) != -1:
     print('rgm = ', RastrInstance()._RastrInstance__rastr.rgm(''))
+    RastrInstance()._RastrInstance__rastr.ut_utr('i')
+    RastrInstance()._RastrInstance__rastr.ut_utr('')
+    RastrInstance().RestorePFToggle()
     RastrInstance().SaveAll('test')
 else:
     print('Something wrong with CMD arguments!')
