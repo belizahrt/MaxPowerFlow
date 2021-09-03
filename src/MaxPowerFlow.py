@@ -50,12 +50,20 @@ def HelpMessage():
     print('\t -pfvv <path> - power flow vector variance (csv) file path')
 
 
+####################################################################
+
+nonRegularLoad = 30
+
+checkIFlag = 0x001
+checkPFlag = 0x010
+checkVFlag = 0x100
+
 if DoInitializeData(sys.argv) != -1:
     print('rgm = ', RastrInstance()._RastrInstance__rastr.rgm(''))
-    RastrInstance()._RastrInstance__rastr.ut_utr('i')
-    RastrInstance()._RastrInstance__rastr.ut_utr('')
+    RastrInstance().CalcMaxPowerFlow(300)
     RastrInstance().RestorePFToggle()
     RastrInstance().SaveAll('test')
 else:
     print('Something wrong with CMD arguments!')
     HelpMessage()
+

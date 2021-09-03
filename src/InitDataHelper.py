@@ -74,16 +74,22 @@ class JsonFilesHandler(AbstractHandler):
 class BranchGroupsFilesHandler(JsonFilesHandler):
 
     def Handle(self, dataSource: str, data: str) -> str:
+        status = None
         if dataSource == "-bg":
             branches = self._readJson(data)
-            status = RastrInstance().MakeBranchGroup('MaxPFBranchGroup')
 
-            if status == None:
-                for branch in branches:
-                    status = RastrInstance().AddBranchToBranchGroup(
-                        RastrInstance().GetBranchGroupNum(), 
-                        branches[branch].get('ip', 0), 
-                        branches[branch].get('iq', 0))
+            for branch in branches:
+                bgNum = branches[branch].get('np', 0)
+
+                if bgNum not in RastrInstance().GetBranchGroups():
+                    status = RastrInstance().MakeBranchGroup(
+                        bgNum, 
+                        'MaxPFBranchGroup ' + str(bgNum))
+
+                status = RastrInstance().AddBranchToBranchGroup(
+                    bgNum, 
+                    branches[branch].get('ip', 0), 
+                    branches[branch].get('iq', 0))
 
             return status
         else:
@@ -108,14 +114,12 @@ class PFVVFilesHandler(AbstractHandler):
             with open(data) as csvfile:
                 reader = csv.DictReader(csvfile)
 
+                id = -1
                 for row in reader:
                     node = row.get('node', 0)
-                    id = 0
                     if node not in self.__nodeIdMap:
+                        id, status = RastrInstance().AddNodePFVV(node, row.get('tg', 0))
                         self.__nodeIdMap[node] = id
-
-                        status = RastrInstance().AddNodePFVV(node, row.get('tg', 0))
-                        id = RastrInstance().GetCurrentPFVVId()-1
                     else:
                         id = self.__nodeIdMap[node]
                         

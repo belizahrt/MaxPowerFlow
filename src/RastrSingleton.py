@@ -14,7 +14,8 @@ class RastrMeta(type):
 
 
 class RastrInstance(metaclass=RastrMeta):
-    __outages: dict = None
+    __outages: dict = {}
+    __branchGroups: dict = {}
 
     def __init__(self):
         self.__rastr = win32com.client.Dispatch('Astra.Rastr')
@@ -25,15 +26,12 @@ class RastrInstance(metaclass=RastrMeta):
         self.__rastr.NewFile('assets\\rastr_templates\\режим.rg2')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
         self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
-        __bgNum = 0
+        self.__branchGroups.clear()
 
-    def GetBranchGroupNum(self):
-        return self.__rastr.Tables('sechen').size
+    def GetBranchGroups(self) -> dict:
+        return self.__branchGroups
 
-    def GetCurrentPFVVId(self):
-        return self.__rastr.Tables('ut_node').size
-
-    def Load(self, file: str, template: str):
+    def Load(self, file: str, template: str) -> str:
         try:
             self.__rastr.Load(1, file, template)
         except Exception as e:
@@ -46,7 +44,7 @@ class RastrInstance(metaclass=RastrMeta):
         if len(toggle.GetPositions()) > 0:
             toggle.MoveOnPosition(1)
 
-    def SaveAll(self, file: str):
+    def SaveAll(self, file: str) -> str:
         try:
             self.__rastr.Save(file + '.rg2', 'assets\\rastr_templates\\режим.rg2')
             self.__rastr.Save(file + '.sch', 'assets\\rastr_templates\\сечения.sch')
@@ -56,19 +54,21 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
-    def MakeBranchGroup(self, name):
+    def MakeBranchGroup(self, bgNum, name) -> str:
         try:
             # make branchgroup in table sechen
+            i = self.__rastr.Tables('sechen').size
             self.__rastr.Tables('sechen').AddRow()
-            ns = self.__rastr.Tables('sechen').size
-            self.__rastr.Tables('sechen').Cols('ns').SetZ(0, ns)
-            self.__rastr.Tables('sechen').Cols('name').SetZ(0, name)
+            self.__rastr.Tables('sechen').Cols('ns').SetZ(i, bgNum)
+            self.__rastr.Tables('sechen').Cols('name').SetZ(i, name)
+
+            self.__branchGroups[bgNum] = i
         except Exception as e:
             return e
 
         return None
 
-    def AddBranchToBranchGroup(self, bgNum, ip, iq):
+    def AddBranchToBranchGroup(self, bgNum, ip, iq) -> str:
         try:
             # add lines for branchgroup in table grline
             i = self.__rastr.Tables('grline').size
@@ -82,7 +82,8 @@ class RastrInstance(metaclass=RastrMeta):
         return None
 
     # PFVV - Power Flow Variance Vector
-    def AddNodePFVV(self, nodeNum, recalcTan):
+    def AddNodePFVV(self, nodeNum, recalcTan) -> [int, str]:
+        i = -1
         try:
             # add vector in table ut_node
             i = self.__rastr.Tables('ut_node').size
@@ -90,11 +91,11 @@ class RastrInstance(metaclass=RastrMeta):
             self.__rastr.Tables('ut_node').Cols('ny').SetZ(i, nodeNum)
             self.__rastr.Tables('ut_node').Cols('tg').SetZ(i, recalcTan)
         except Exception as e:
-            return e
+            return -1, e
 
-        return None
+        return i, None
 
-    def SetNodePFVVParam(self, id, param, value):
+    def SetNodePFVVParam(self, id, param, value) -> str:
         try:
             self.__rastr.Tables('ut_node').Cols(param).SetZ(id, value)
         except Exception as e:
@@ -105,3 +106,25 @@ class RastrInstance(metaclass=RastrMeta):
     def SetOutages(self, outages: dict):
         self.__outages = outages
         return None
+
+    def CalcMaxPowerFlow(self, itersCount, checkParameters=0x000):
+        try:
+            self.__rastr.Tables('ut_common').Cols('iter').SetZ(0, int(itersCount))
+
+            self.__rastr.Tables('ut_common').Cols('enable_contr') \
+                .SetZ(0, checkParameters != 0)
+            self.__rastr.Tables('ut_common').Cols('dis_i_contr') \
+                .SetZ(0, checkParameters & 0x001 != 0x001)
+            self.__rastr.Tables('ut_common').Cols('dis_p_contr') \
+                .SetZ(0, checkParameters & 0x010 != 0x010)
+            self.__rastr.Tables('ut_common').Cols('dis_v_contr') \
+                .SetZ(0, checkParameters & 0x100 != 0x100)
+
+            if self.__rastr.ut_utr('i') > 0:
+                self.__rastr.ut_utr('')
+            else:
+                return -1
+        except Exception as e:
+            return -1
+
+        return 0
