@@ -107,19 +107,31 @@ class RastrInstance(metaclass=RastrMeta):
         self.__outages = outages
         return None
 
-    def CalcMaxPowerFlow(self, itersCount, checkParameters=0x000):
+    def GetBranchGroupPFValue(self, bgNum) -> float:
         try:
+            return float(self.__rastr.Tables('sechen') \
+                .Cols('psech').Z(self.__branchGroups[bgNum]))
+        except:
+            return None
+
+    def CalcMaxPowerFlow(self, itersCount, 
+            checkParameters=0x000, marginU=0.5) -> int:
+        try:
+            # setup pf options in table com_regim
+            self.__rastr.Tables('com_regim').Cols('dv_min').SetZ(0, float(marginU))
+            # setup utr options in table ut_common
             self.__rastr.Tables('ut_common').Cols('iter').SetZ(0, int(itersCount))
 
             self.__rastr.Tables('ut_common').Cols('enable_contr') \
                 .SetZ(0, checkParameters != 0)
             self.__rastr.Tables('ut_common').Cols('dis_i_contr') \
-                .SetZ(0, checkParameters & 0x001 != 0x001)
+                .SetZ(0, not (checkParameters & 0x001 == 0x001))
             self.__rastr.Tables('ut_common').Cols('dis_p_contr') \
-                .SetZ(0, checkParameters & 0x010 != 0x010)
+                .SetZ(0, not (checkParameters & 0x010 == 0x010))
             self.__rastr.Tables('ut_common').Cols('dis_v_contr') \
-                .SetZ(0, checkParameters & 0x100 != 0x100)
+                .SetZ(0, not (checkParameters & 0x100 == 0x100))
 
+            # init utr & calc utr
             if self.__rastr.ut_utr('i') > 0:
                 self.__rastr.ut_utr('')
             else:

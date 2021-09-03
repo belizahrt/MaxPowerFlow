@@ -79,7 +79,7 @@ class BranchGroupsFilesHandler(JsonFilesHandler):
             branches = self._readJson(data)
 
             for branch in branches:
-                bgNum = branches[branch].get('np', 0)
+                bgNum = 1 #branches[branch].get('np', 0)
 
                 if bgNum not in RastrInstance().GetBranchGroups():
                     status = RastrInstance().MakeBranchGroup(
