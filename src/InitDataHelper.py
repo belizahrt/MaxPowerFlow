@@ -68,7 +68,7 @@ class JsonFilesHandler(AbstractHandler):
         return result
 
     def Handle(self, dataSource: str, data: str) -> str:
-        super().Handle(dataSource, data)
+        return super().Handle(dataSource, data)
 
 
 class BranchGroupsFilesHandler(JsonFilesHandler):
@@ -100,7 +100,7 @@ class OutagesFilesHandler(JsonFilesHandler):
 
     def Handle(self, dataSource: str, data: str) -> str:
         if dataSource == "-outages":
-            return RastrInstance().SetOutages(self._readJson(data))
+            return str(self._readJson(data)) #RastrInstance().SetOutages(self._readJson(data))
         else:
             return super().Handle(dataSource, data)
 

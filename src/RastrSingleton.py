@@ -14,7 +14,6 @@ class RastrMeta(type):
 
 
 class RastrInstance(metaclass=RastrMeta):
-    __outages: dict = {}
     __branchGroups: dict = {}
 
     def __init__(self):
@@ -39,11 +38,16 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
-    def RestorePFToggle(self):
+    def RestorePFToggle(self, position=1):
         toggle = self.__rastr.GetToggle()
-        if len(toggle.GetPositions()) > 0:
-            toggle.MoveOnPosition(1)
+        if len(toggle.GetPositions()) >= position:
+            toggle.MoveOnPosition(position)
 
+    def GetTogglePositionsCount(self, position=1):
+        toggle = self.__rastr.GetToggle()
+        return len(toggle.GetPositions())
+
+    # tests
     def SaveAll(self, file: str) -> str:
         try:
             self.__rastr.Save(file + '.rg2', 'assets\\rastr_templates\\режим.rg2')
@@ -103,10 +107,6 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
-    def SetOutages(self, outages: dict):
-        self.__outages = outages
-        return None
-
     def GetBranchGroupPFValue(self, bgNum) -> float:
         try:
             return float(self.__rastr.Tables('sechen') \
@@ -114,7 +114,13 @@ class RastrInstance(metaclass=RastrMeta):
         except:
             return None
 
-    def CalcMaxPowerFlow(self, itersCount, 
+    def PowerFlow(self, param='') -> int:
+        try:
+            return int(self.__rastr.rgm(param))
+        except:
+            return None  
+
+    def CalcMaxPowerFlow(self, itersCount=100, 
             checkParameters=0x000, marginU=0.5) -> int:
         try:
             # setup pf options in table com_regim
@@ -136,7 +142,31 @@ class RastrInstance(metaclass=RastrMeta):
                 self.__rastr.ut_utr('')
             else:
                 return -1
+
         except Exception as e:
             return -1
 
+        return 0
+
+    def ChangeBranchState(self, ip, iq, np, state) -> int:
+        try:
+            vetv = self.__rastr.Tables('vetv') 
+            vetv.SetSel('ip={_ip}&iq={_iq}&np={_np}'.format(_ip=ip, _iq=iq, _np=np))
+            vetv.Cols('sta').Calc(state)
+        except:
+            return -1
+        return 0
+
+    # swap normal and emergency current limits, cause
+    # rastr can only consider normal current limits
+    def SwapCurrentLimits(self):
+        try:
+            for i in range(0, self.__rastr.Tables('vetv').size):
+                normalI = self.__rastr.Tables('vetv').cols('i_dop').Z(i)
+                emergencyI = self.__rastr.Tables('vetv').cols('i_dop_av').Z(i)
+
+                self.__rastr.Tables('vetv').cols('i_dop').SetZ(i, emergencyI)
+                self.__rastr.Tables('vetv').cols('i_dop_av').SetZ(i, normalI)
+        except:
+            return -1
         return 0

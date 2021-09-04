@@ -15,9 +15,10 @@ def ReadCmdLine(argv):
     
     return params
 
+outages: dict = {}
 
 def DoInitializeData(argv):
-    
+    global outages
     params = ReadCmdLine(argv)
 
     rgFilesHandler = InitDataHelper.RegimeFilesHandler()
@@ -30,6 +31,11 @@ def DoInitializeData(argv):
 
     for key in params:
         status = rgFilesHandler.Handle(key, params[key])
+
+        if key == '-outages':
+            outages = eval(status)
+            status = None
+
         if status != None:
             print('Data initialization failed: ', status)
             return -1
@@ -61,21 +67,63 @@ def GetMaxPF(checkParams=0x000, marginU=0.5):
     RastrInstance().CalcMaxPowerFlow(maxIters, checkParams, marginU)
     result = RastrInstance().GetBranchGroupPFValue(1)
     RastrInstance().RestorePFToggle()
-    return result
+    return abs(result)
+
+
+def GetEmergencyPF(checkParams=0x000, marginU=0.5, marginP=1):
+    global outages
+    global maxIters
+
+    faults_result = []
+    for outage in outages:
+        RastrInstance().ChangeBranchState(
+            outages[outage]['ip'], outages[outage]['iq'], 0, '1')
+
+        RastrInstance().CalcMaxPowerFlow(maxIters, checkParams, marginU)
+        pos = RastrInstance().GetTogglePositionsCount()
+
+        limP = abs(RastrInstance().GetBranchGroupPFValue(1))
+        while abs(RastrInstance().GetBranchGroupPFValue(1)) > marginP * limP:
+            pos -= 1
+            RastrInstance().RestorePFToggle(pos)
+
+        RastrInstance().ChangeBranchState(
+            outages[outage]['ip'], outages[outage]['iq'], 0, '0')
+
+        RastrInstance().PowerFlow()
+        faults_result.append(abs(RastrInstance().GetBranchGroupPFValue(1)))
+        
+        RastrInstance().RestorePFToggle()
+        RastrInstance().ChangeBranchState(
+            outages[outage]['ip'], outages[outage]['iq'], 0, '0')
+        RastrInstance().PowerFlow()
+
+    return min(faults_result)
 
 
 if DoInitializeData(sys.argv) != -1:
 
-    criteria1 = 0.8 * abs(GetMaxPF()) - nonRegularLoad
-    print('• 20% Pmax запас в нормальном режиме:\t', criteria1)
+    criteria1 = 0.8 * GetMaxPF() - nonRegularLoad
+    print('• 20% Pmax запас в нормальном режиме:\t', round(criteria1, 2))
     
-    criteria2 = abs(GetMaxPF(checkVFlag, 0.7/(1-0.15))) - nonRegularLoad
-    print('• 15% Ucr запас в нормальном режиме:\t', criteria2)   
+    criteria2 = GetMaxPF(checkVFlag, 0.7/(1-0.15)) - nonRegularLoad
+    print('• 15% Ucr запас в нормальном режиме:\t', round(criteria2, 2))   
 
-    criteria3 = abs(GetMaxPF(checkIFlag)) - nonRegularLoad
-    print('• ДДТН в нормальном режиме:\t\t', criteria3)   
+    criteria3 = GetMaxPF(checkIFlag) - nonRegularLoad
+    print('• ДДТН в нормальном режиме:\t\t', round(criteria3, 2))   
     
-    RastrInstance().SaveAll('test')
+    criteria4 = GetEmergencyPF(marginP=0.92) - nonRegularLoad
+    print('• 8% Pmax запас в послеаварийном режиме:', round(criteria4, 2)) 
+
+    criteria5 = GetEmergencyPF(
+        checkParams=checkVFlag, marginU=0.7/(1-0.1)) - nonRegularLoad
+    print('• 10% Ucr запас в послеаварийном режиме:', round(criteria5, 2)) 
+
+    RastrInstance().SwapCurrentLimits()
+    criteria6 = GetEmergencyPF(checkParams=checkIFlag) - nonRegularLoad
+    RastrInstance().SwapCurrentLimits()
+    print('• АДТН в послеаварийном режиме:\t\t', round(criteria6, 2)) 
+
 else:
     print('Something wrong with CMD arguments!')
     HelpMessage()
