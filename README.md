@@ -8,7 +8,7 @@ Python script for calculating maximum transmission power flow in branch group of
 
 ### Requirments
 
-* Python (x32) 2.7 (or upper)
+* Python (x32) 3.7 (or upper)
 * Pywin32 installed in python enviroment
 * Installed RastrWin3 with registered COM AstraLib 1.0
 
