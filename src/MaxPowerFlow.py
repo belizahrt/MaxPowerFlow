@@ -83,8 +83,8 @@ def get_max_pf(check_params: int = 0x000, margin_u: float = 0.5) -> float:
     """
     wrapper method for calculate and extract value of max transmission power flow
     ! restore origin PF state
-    :param check_params:    hex byte flag to set up control params of max PF calculating
-                            (001 - current, 010 - powerflow, 100 - voltage)
+    :param check_params: hex byte flag to set up control params of max PF calculating
+        (001 - current, 010 - powerflow, 100 - voltage)
     :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
     :return: abs value of power flow in branch group at id = 1
     """
@@ -103,12 +103,12 @@ def get_emergency_pf(check_params: int = 0x000,
     wrapper method for calculate and extract value of emergency (cause ref. disturbances) 
     transmission power flow
     ! restore origin PF state
-    :param check_params:    hex byte flag to set up control params of max PF calculating
-                            (001 - current, 010 - powerflow, 100 - voltage)
+    :param check_params: hex byte flag to set up control params of max PF calculating
+        (001 - current, 010 - powerflow, 100 - voltage)
     :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
     :param margin_p: fraction of P in emergency PF should be roll back before restore PF
-    :return:    min abs value as result of outages permutation 
-                of power flow in branch group at id = 1
+    :return: min abs value as result of outages permutation 
+        of power flow in branch group at id = 1
     """
     global outages
     global max_iters

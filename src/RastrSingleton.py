@@ -4,7 +4,7 @@ import win32com.client
 from typing import Optional
 
 
-# not thread-safe
+# not thread-safe singleton
 class RastrMeta(type):
     __instances = {}
 
@@ -23,9 +23,9 @@ class RastrInstance(metaclass=RastrMeta):
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
         self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
 
-    def reset_workspace(self):
+    def reset_workspace(self) -> None:
         """
-
+        clear all tables in rg2, sch, ut2 templates files
         """
         self.__rastr.NewFile('assets\\rastr_templates\\режим.rg2')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
@@ -34,17 +34,17 @@ class RastrInstance(metaclass=RastrMeta):
 
     def get_branch_groups(self) -> dict:
         """
-
-        :return:
+        get map of branch groups in format {num of bg: id of bg in 'sechen' table}
+        :return: private object
         """
         return self.__branch_groups
 
     def load(self, file: str, template: str) -> Optional[str]:
         """
-
-        :param file:
-        :param template:
-        :return:
+        load file by path with template and replace corresponding opened file in workspace
+        :param file: file path
+        :param template: template path
+        :return: None - file was load successfully or COM Exception string
         """
         try:
             self.__rastr.load(1, file, template)
@@ -55,8 +55,9 @@ class RastrInstance(metaclass=RastrMeta):
 
     def restore_pf_toggle(self, position: int = 1) -> None:
         """
-
-        :param position:
+        get rastr PF toggle (to switch beetween calculating steps)
+        :param position: number of calculating step (from 1 to get_toggle_positions_count)
+            position = 1 is origin PF
         """
         toggle = self.__rastr.GetToggle()
         if len(toggle.GetPositions()) >= position:
@@ -64,8 +65,7 @@ class RastrInstance(metaclass=RastrMeta):
 
     def get_toggle_positions_count(self) -> int:
         """
-
-        :return:
+        :return: calculating steps count
         """
         toggle = self.__rastr.GetToggle()
         return len(toggle.GetPositions())
@@ -83,13 +83,12 @@ class RastrInstance(metaclass=RastrMeta):
 
     def make_branch_group(self, bg_num: int, name: str) -> Optional[str]:
         """
-
-        :param bg_num:
-        :param name:
-        :return:
+        create new branch group in table 'sechen'
+        :param bg_num: number of branch group (semantic number)
+        :param name: name of branch group
+        :return: None - file was load successfully or COM Exception string
         """
         try:
-            # make branchgroup in table sechen
             i = self.__rastr.Tables('sechen').size
             self.__rastr.Tables('sechen').AddRow()
             self.__rastr.Tables('sechen').Cols('ns').SetZ(i, bg_num)
@@ -104,11 +103,11 @@ class RastrInstance(metaclass=RastrMeta):
     def add_branch_to_branch_group(self, bg_num: int,
                                    ip: int, iq: int) -> Optional[str]:
         """
-
-        :param bg_num:
-        :param ip:
-        :param iq:
-        :return:
+        add branch with ip and iq node endings in branch group
+        :param bg_num: number of branch group
+        :param ip: begin node
+        :param iq: end node
+        :return: None - file was load successfully or COM Exception string
         """
         try:
             # add lines for branchgroup in table grline
@@ -122,17 +121,16 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
-    # PFVV - Power Flow Variance Vector
     def add_node_pfvv(self, node_num: int, recalc_tan: int) -> [int, str]:
         """
-
-        :param node_num:
-        :param recalc_tan:
-        :return:
+        add node to 'ut_node' table (new component of pfvv)
+        :param node_num: number of node
+        :param recalc_tan: 0 - no power recalc consider power coeff (tan), 
+            1 - recalc power consider tan
+        :return: tuple <new id in table (-1 if adding failed), None (COM exception text if failed)>
         """
         i = -1
         try:
-            # add vector in table ut_node
             i = self.__rastr.Tables('ut_node').size
             self.__rastr.Tables('ut_node').AddRow()
             self.__rastr.Tables('ut_node').Cols('ny').SetZ(i, node_num)
@@ -143,13 +141,13 @@ class RastrInstance(metaclass=RastrMeta):
         return i, None
 
     def set_node_pfvv_param(self, node_id: int,
-                            param: str, value: any) -> Optional[str]:
+                            param: str, value: float) -> Optional[str]:
         """
-
-        :param node_id:
-        :param param:
-        :param value:
-        :return:
+        set value of pfvv
+        :param node_id: id of node
+        :param param: str name of variance value ('pn', 'pg', ...)
+        :param value: value of parameter
+        :return: None - file was load successfully or COM Exception string
         """
         try:
             self.__rastr.Tables('ut_node').Cols(param).SetZ(node_id, value)
@@ -160,9 +158,9 @@ class RastrInstance(metaclass=RastrMeta):
 
     def get_branch_group_pf_value(self, bg_num: int) -> Optional[float]:
         """
-
-        :param bg_num:
-        :return:
+        get sum power flow in branch group
+        :param bg_num: number of branch group
+        :return: float value of sum power flow in branch group
         """
         try:
             return float(self.__rastr.Tables('sechen') \
@@ -172,9 +170,15 @@ class RastrInstance(metaclass=RastrMeta):
 
     def power_flow(self, param: str = '') -> Optional[int]:
         """
-
-        :param param:
-        :return:
+        calculate power flow
+        :param param: str param:
+            '' - by default
+            'p' - flot start
+            'z' - no starting algo
+            'c' - no data control
+            'r' - no data prepare
+        :return: Rastr return code or None if COM exception raised
+             Rastr return code - 0 success, 1 - bad convergence (no pf)
         """
         try:
             return int(self.__rastr.rgm(param))
@@ -185,11 +189,12 @@ class RastrInstance(metaclass=RastrMeta):
                             check_parameters: int = 0x000,
                             margin_u: float = 0.5) -> int:
         """
-
-        :param iters_count:
-        :param check_parameters:
-        :param margin_u:
-        :return:
+        calculate maximum transmission power flow along the pfvv
+        :param iters_count: maximum iterations count
+        :param check_parameters: hex byte flag to set up control params of max PF calculating
+        (001 - current, 010 - powerflow, 100 - voltage)
+        :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
+        :return: 0 - success, -1 - failed 
         """
         try:
             # setup pf options in table com_regim
@@ -219,12 +224,12 @@ class RastrInstance(metaclass=RastrMeta):
 
     def change_branch_state(self, ip: int, iq: int, np: int, state: str) -> int:
         """
-
-        :param ip:
-        :param iq:
-        :param np:
-        :param state:
-        :return:
+        change state of branch via 'sta' 'vetv' table field 
+        :param ip: branch begin node
+        :param iq: branch end node
+        :param np: parallel branch number
+        :param state: str param, where '0' - switch on, '1' - switch off
+        :return: 0 - if no com exception, -1 - com exception raised
         """
         try:
             vetv = self.__rastr.Tables('vetv')
@@ -234,12 +239,11 @@ class RastrInstance(metaclass=RastrMeta):
             return -1
         return 0
 
-    # swap normal and emergency current limits, cause
-    # rastr can only consider normal current limits
     def swap_current_limits(self) -> int:
         """
-
-        :return:
+        swap normal and emergency current limits, cause
+        rastr can only consider normal current limits
+        :return: 0 - if no com exception, -1 - com exception raised
         """
         try:
             for i in range(0, self.__rastr.Tables('vetv').size):
