@@ -9,9 +9,9 @@ outages: dict = {}
 
 def read_cmd_line(argv: [str]) -> dict:
     """
-
-    :param argv:
-    :return:
+    read list of cmd args to dict in format {KEY: ARG} (see help message)
+    :param argv: list of cmd arguments
+    :return: map of arguments
     """
     params = {}
 
@@ -26,9 +26,9 @@ def read_cmd_line(argv: [str]) -> dict:
 
 def do_initialize_data(argv: [str]) -> int:
     """
-
-    :param argv:
-    :return:
+    function extracts init data from cmd args via helper
+    :param argv: list of cmd arguments
+    :return: 0 - if init ok, -1 - initialization failed
     """
     global outages
     params = read_cmd_line(argv)
@@ -57,7 +57,7 @@ def do_initialize_data(argv: [str]) -> int:
 
 def help_message() -> None:
     """
-
+    prints help message of usage format
     """
     print('Just use this CMD template: ')
     print('MaxPowerFlow.py [-KEY1] <ARG1> [-KEY2] <ARG2> ..., where KEY and ARG:')
@@ -81,10 +81,12 @@ check_v_flag: int = 0x100
 
 def get_max_pf(check_params: int = 0x000, margin_u: float = 0.5) -> float:
     """
-
-    :param check_params:
-    :param margin_u:
-    :return:
+    wrapper method for calculate and extract value of max transmission power flow
+    ! restore origin PF state
+    :param check_params:    hex byte flag to set up control params of max PF calculating
+                            (001 - current, 010 - powerflow, 100 - voltage)
+    :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
+    :return: abs value of power flow in branch group at id = 1
     """
     global max_iters
 
@@ -98,11 +100,15 @@ def get_emergency_pf(check_params: int = 0x000,
                      margin_u: float = 0.5,
                      margin_p: float = 1) -> float:
     """
-
-    :param check_params:
-    :param margin_u:
-    :param margin_p:
-    :return:
+    wrapper method for calculate and extract value of emergency (cause ref. disturbances) 
+    transmission power flow
+    ! restore origin PF state
+    :param check_params:    hex byte flag to set up control params of max PF calculating
+                            (001 - current, 010 - powerflow, 100 - voltage)
+    :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
+    :param margin_p: fraction of P in emergency PF should be roll back before restore PF
+    :return:    min abs value as result of outages permutation 
+                of power flow in branch group at id = 1
     """
     global outages
     global max_iters
