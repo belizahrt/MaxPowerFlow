@@ -1,8 +1,10 @@
 # calc engine for MaxPowerFlow
 
 import win32com.client
+from typing import Optional
 
-# not thread-safed
+
+# not thread-safe
 class RastrMeta(type):
     __instances = {}
 
@@ -14,41 +16,62 @@ class RastrMeta(type):
 
 
 class RastrInstance(metaclass=RastrMeta):
-    __branchGroups: dict = {}
+    __branch_groups: dict = {}
 
     def __init__(self):
         self.__rastr = win32com.client.Dispatch('Astra.Rastr')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
         self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
 
-    def ResetWorkspace(self):
+    def reset_workspace(self):
+        """
+
+        """
         self.__rastr.NewFile('assets\\rastr_templates\\режим.rg2')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
         self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
-        self.__branchGroups.clear()
+        self.__branch_groups.clear()
 
-    def GetBranchGroups(self) -> dict:
-        return self.__branchGroups
+    def get_branch_groups(self) -> dict:
+        """
 
-    def Load(self, file: str, template: str) -> str:
+        :return:
+        """
+        return self.__branch_groups
+
+    def load(self, file: str, template: str) -> Optional[str]:
+        """
+
+        :param file:
+        :param template:
+        :return:
+        """
         try:
-            self.__rastr.Load(1, file, template)
+            self.__rastr.load(1, file, template)
         except Exception as e:
             return e
 
         return None
 
-    def RestorePFToggle(self, position=1):
+    def restore_pf_toggle(self, position: int = 1) -> None:
+        """
+
+        :param position:
+        """
         toggle = self.__rastr.GetToggle()
         if len(toggle.GetPositions()) >= position:
             toggle.MoveOnPosition(position)
 
-    def GetTogglePositionsCount(self, position=1):
+    def get_toggle_positions_count(self) -> int:
+        """
+
+        :return:
+        """
         toggle = self.__rastr.GetToggle()
         return len(toggle.GetPositions())
 
     # tests
-    def SaveAll(self, file: str) -> str:
+    def save_all(self, file: str) -> Optional[str]:
         try:
             self.__rastr.Save(file + '.rg2', 'assets\\rastr_templates\\режим.rg2')
             self.__rastr.Save(file + '.sch', 'assets\\rastr_templates\\сечения.sch')
@@ -58,26 +81,40 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
-    def MakeBranchGroup(self, bgNum, name) -> str:
+    def make_branch_group(self, bg_num: int, name: str) -> Optional[str]:
+        """
+
+        :param bg_num:
+        :param name:
+        :return:
+        """
         try:
             # make branchgroup in table sechen
             i = self.__rastr.Tables('sechen').size
             self.__rastr.Tables('sechen').AddRow()
-            self.__rastr.Tables('sechen').Cols('ns').SetZ(i, bgNum)
+            self.__rastr.Tables('sechen').Cols('ns').SetZ(i, bg_num)
             self.__rastr.Tables('sechen').Cols('name').SetZ(i, name)
 
-            self.__branchGroups[bgNum] = i
+            self.__branch_groups[bg_num] = i
         except Exception as e:
             return e
 
         return None
 
-    def AddBranchToBranchGroup(self, bgNum, ip, iq) -> str:
+    def add_branch_to_branch_group(self, bg_num: int,
+                                   ip: int, iq: int) -> Optional[str]:
+        """
+
+        :param bg_num:
+        :param ip:
+        :param iq:
+        :return:
+        """
         try:
             # add lines for branchgroup in table grline
             i = self.__rastr.Tables('grline').size
             self.__rastr.Tables('grline').AddRow()
-            self.__rastr.Tables('grline').Cols('ns').SetZ(i, bgNum)
+            self.__rastr.Tables('grline').Cols('ns').SetZ(i, bg_num)
             self.__rastr.Tables('grline').Cols('ip').SetZ(i, ip)
             self.__rastr.Tables('grline').Cols('iq').SetZ(i, iq)
         except Exception as e:
@@ -86,56 +123,88 @@ class RastrInstance(metaclass=RastrMeta):
         return None
 
     # PFVV - Power Flow Variance Vector
-    def AddNodePFVV(self, nodeNum, recalcTan) -> [int, str]:
+    def add_node_pfvv(self, node_num: int, recalc_tan: int) -> [int, str]:
+        """
+
+        :param node_num:
+        :param recalc_tan:
+        :return:
+        """
         i = -1
         try:
             # add vector in table ut_node
             i = self.__rastr.Tables('ut_node').size
             self.__rastr.Tables('ut_node').AddRow()
-            self.__rastr.Tables('ut_node').Cols('ny').SetZ(i, nodeNum)
-            self.__rastr.Tables('ut_node').Cols('tg').SetZ(i, recalcTan)
+            self.__rastr.Tables('ut_node').Cols('ny').SetZ(i, node_num)
+            self.__rastr.Tables('ut_node').Cols('tg').SetZ(i, recalc_tan)
         except Exception as e:
             return -1, e
 
         return i, None
 
-    def SetNodePFVVParam(self, id, param, value) -> str:
+    def set_node_pfvv_param(self, node_id: int,
+                            param: str, value: any) -> Optional[str]:
+        """
+
+        :param node_id:
+        :param param:
+        :param value:
+        :return:
+        """
         try:
-            self.__rastr.Tables('ut_node').Cols(param).SetZ(id, value)
+            self.__rastr.Tables('ut_node').Cols(param).SetZ(node_id, value)
         except Exception as e:
             return e
 
         return None
 
-    def GetBranchGroupPFValue(self, bgNum) -> float:
+    def get_branch_group_pf_value(self, bg_num: int) -> Optional[float]:
+        """
+
+        :param bg_num:
+        :return:
+        """
         try:
             return float(self.__rastr.Tables('sechen') \
-                .Cols('psech').Z(self.__branchGroups[bgNum]))
+                         .Cols('psech').Z(self.__branch_groups[bg_num]))
         except:
             return None
 
-    def PowerFlow(self, param='') -> int:
+    def power_flow(self, param: str = '') -> Optional[int]:
+        """
+
+        :param param:
+        :return:
+        """
         try:
             return int(self.__rastr.rgm(param))
         except:
-            return None  
+            return None
 
-    def CalcMaxPowerFlow(self, itersCount=100, 
-            checkParameters=0x000, marginU=0.5) -> int:
+    def calc_max_power_flow(self, iters_count: int = 100,
+                            check_parameters: int = 0x000,
+                            margin_u: float = 0.5) -> int:
+        """
+
+        :param iters_count:
+        :param check_parameters:
+        :param margin_u:
+        :return:
+        """
         try:
             # setup pf options in table com_regim
-            self.__rastr.Tables('com_regim').Cols('dv_min').SetZ(0, float(marginU))
+            self.__rastr.Tables('com_regim').Cols('dv_min').SetZ(0, float(margin_u))
             # setup utr options in table ut_common
-            self.__rastr.Tables('ut_common').Cols('iter').SetZ(0, int(itersCount))
+            self.__rastr.Tables('ut_common').Cols('iter').SetZ(0, int(iters_count))
 
             self.__rastr.Tables('ut_common').Cols('enable_contr') \
-                .SetZ(0, checkParameters != 0)
+                .SetZ(0, check_parameters != 0)
             self.__rastr.Tables('ut_common').Cols('dis_i_contr') \
-                .SetZ(0, not (checkParameters & 0x001 == 0x001))
+                .SetZ(0, not (check_parameters & 0x001 == 0x001))
             self.__rastr.Tables('ut_common').Cols('dis_p_contr') \
-                .SetZ(0, not (checkParameters & 0x010 == 0x010))
+                .SetZ(0, not (check_parameters & 0x010 == 0x010))
             self.__rastr.Tables('ut_common').Cols('dis_v_contr') \
-                .SetZ(0, not (checkParameters & 0x100 == 0x100))
+                .SetZ(0, not (check_parameters & 0x100 == 0x100))
 
             # init utr & calc utr
             if self.__rastr.ut_utr('i') > 0:
@@ -148,9 +217,17 @@ class RastrInstance(metaclass=RastrMeta):
 
         return 0
 
-    def ChangeBranchState(self, ip, iq, np, state) -> int:
+    def change_branch_state(self, ip: int, iq: int, np: int, state: str) -> int:
+        """
+
+        :param ip:
+        :param iq:
+        :param np:
+        :param state:
+        :return:
+        """
         try:
-            vetv = self.__rastr.Tables('vetv') 
+            vetv = self.__rastr.Tables('vetv')
             vetv.SetSel('ip={_ip}&iq={_iq}&np={_np}'.format(_ip=ip, _iq=iq, _np=np))
             vetv.Cols('sta').Calc(state)
         except:
@@ -159,14 +236,18 @@ class RastrInstance(metaclass=RastrMeta):
 
     # swap normal and emergency current limits, cause
     # rastr can only consider normal current limits
-    def SwapCurrentLimits(self):
+    def swap_current_limits(self) -> int:
+        """
+
+        :return:
+        """
         try:
             for i in range(0, self.__rastr.Tables('vetv').size):
-                normalI = self.__rastr.Tables('vetv').cols('i_dop').Z(i)
-                emergencyI = self.__rastr.Tables('vetv').cols('i_dop_av').Z(i)
+                normal_i = self.__rastr.Tables('vetv').cols('i_dop').Z(i)
+                emergency_i = self.__rastr.Tables('vetv').cols('i_dop_av').Z(i)
 
-                self.__rastr.Tables('vetv').cols('i_dop').SetZ(i, emergencyI)
-                self.__rastr.Tables('vetv').cols('i_dop_av').SetZ(i, normalI)
+                self.__rastr.Tables('vetv').cols('i_dop').SetZ(i, emergency_i)
+                self.__rastr.Tables('vetv').cols('i_dop_av').SetZ(i, normal_i)
         except:
             return -1
         return 0

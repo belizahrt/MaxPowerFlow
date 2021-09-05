@@ -4,46 +4,61 @@ import InitDataHelper
 import sys
 
 
-def ReadCmdLine(argv):
+outages: dict = {}
+
+
+def read_cmd_line(argv: [str]) -> dict:
+    """
+
+    :param argv:
+    :return:
+    """
     params = {}
 
     i = 1
     while i < len(argv):
-        if argv[i+1] not in params:
-            params[argv[i]] = argv[i+1]
+        if argv[i + 1] not in params:
+            params[argv[i]] = argv[i + 1]
         i += 2
-    
+
     return params
 
-outages: dict = {}
 
-def DoInitializeData(argv):
+def do_initialize_data(argv: [str]) -> int:
+    """
+
+    :param argv:
+    :return:
+    """
     global outages
-    params = ReadCmdLine(argv)
+    params = read_cmd_line(argv)
 
-    rgFilesHandler = InitDataHelper.RegimeFilesHandler()
-    bgFileHandler = InitDataHelper.BranchGroupsFilesHandler()
-    outageFileHandler = InitDataHelper.OutagesFilesHandler()
-    pfvvFileHandler = InitDataHelper.PFVVFilesHandler()
+    rg_files_handler = InitDataHelper.RegimeFilesHandler()
+    bg_files_handler = InitDataHelper.BranchGroupsFilesHandler()
+    outages_files_handler = InitDataHelper.OutagesFilesHandler()
+    pfvv_files_handler = InitDataHelper.PFVVFilesHandler()
 
-    rgFilesHandler.SetNext(bgFileHandler).SetNext(outageFileHandler) \
-        .SetNext(pfvvFileHandler)
+    rg_files_handler.set_next(bg_files_handler).set_next(outages_files_handler) \
+        .set_next(pfvv_files_handler)
 
     for key in params:
-        status = rgFilesHandler.Handle(key, params[key])
+        status = rg_files_handler.handle(key, params[key])
 
         if key == '-outages':
             outages = eval(status)
             status = None
 
-        if status != None:
+        if status is not None:
             print('Data initialization failed: ', status)
             return -1
 
     return 0
 
 
-def HelpMessage():
+def help_message() -> None:
+    """
+
+    """
     print('Just use this CMD template: ')
     print('MaxPowerFlow.py [-KEY1] <ARG1> [-KEY2] <ARG2> ..., where KEY and ARG:')
     print('\t -rg2 <path> - regime file path')
@@ -55,76 +70,96 @@ def HelpMessage():
 
 ####################################################################
 
-nonRegularLoad = 30
+non_regular_load: float = 30.0
 
-maxIters = 300
+max_iters: int = 300
 
-checkIFlag = 0x001
-checkPFlag = 0x010
-checkVFlag = 0x100
+check_i_flag: int = 0x001
+check_p_flag: int = 0x010
+check_v_flag: int = 0x100
 
-def GetMaxPF(checkParams=0x000, marginU=0.5):
-    RastrInstance().CalcMaxPowerFlow(maxIters, checkParams, marginU)
-    result = RastrInstance().GetBranchGroupPFValue(1)
-    RastrInstance().RestorePFToggle()
+
+def get_max_pf(check_params: int = 0x000, margin_u: float = 0.5) -> float:
+    """
+
+    :param check_params:
+    :param margin_u:
+    :return:
+    """
+    global max_iters
+
+    RastrInstance().calc_max_power_flow(max_iters, check_params, margin_u)
+    result = RastrInstance().get_branch_group_pf_value(1)
+    RastrInstance().restore_pf_toggle()
     return abs(result)
 
 
-def GetEmergencyPF(checkParams=0x000, marginU=0.5, marginP=1):
+def get_emergency_pf(check_params: int = 0x000,
+                     margin_u: float = 0.5,
+                     margin_p: float = 1) -> float:
+    """
+
+    :param check_params:
+    :param margin_u:
+    :param margin_p:
+    :return:
+    """
     global outages
-    global maxIters
+    global max_iters
 
     faults_result = []
     for outage in outages:
-        RastrInstance().ChangeBranchState(
+        RastrInstance().change_branch_state(
             outages[outage]['ip'], outages[outage]['iq'], 0, '1')
 
-        RastrInstance().CalcMaxPowerFlow(maxIters, checkParams, marginU)
-        pos = RastrInstance().GetTogglePositionsCount()
+        RastrInstance().calc_max_power_flow(max_iters, check_params, margin_u)
+        pos = RastrInstance().get_toggle_positions_count()
 
-        limP = abs(RastrInstance().GetBranchGroupPFValue(1))
-        while abs(RastrInstance().GetBranchGroupPFValue(1)) > marginP * limP:
+        lim_p = abs(RastrInstance().get_branch_group_pf_value(1))
+        while abs(RastrInstance().get_branch_group_pf_value(1)) > margin_p * lim_p:
             pos -= 1
-            RastrInstance().RestorePFToggle(pos)
+            RastrInstance().restore_pf_toggle(pos)
 
-        RastrInstance().ChangeBranchState(
+        RastrInstance().change_branch_state(
             outages[outage]['ip'], outages[outage]['iq'], 0, '0')
 
-        RastrInstance().PowerFlow()
-        faults_result.append(abs(RastrInstance().GetBranchGroupPFValue(1)))
-        
-        RastrInstance().RestorePFToggle()
-        RastrInstance().ChangeBranchState(
+        RastrInstance().power_flow()
+        faults_result.append(abs(RastrInstance().get_branch_group_pf_value(1)))
+
+        RastrInstance().restore_pf_toggle()
+        RastrInstance().change_branch_state(
             outages[outage]['ip'], outages[outage]['iq'], 0, '0')
-        RastrInstance().PowerFlow()
+        RastrInstance().power_flow()
 
     return min(faults_result)
 
 
-if DoInitializeData(sys.argv) != -1:
+####################################################################
+# main
 
-    criteria1 = 0.8 * GetMaxPF() - nonRegularLoad
+if do_initialize_data(sys.argv) != -1:
+
+    criteria1 = 0.8 * get_max_pf() - non_regular_load
     print('• 20% Pmax запас в нормальном режиме:\t', round(criteria1, 2))
-    
-    criteria2 = GetMaxPF(checkVFlag, 0.7/(1-0.15)) - nonRegularLoad
-    print('• 15% Ucr запас в нормальном режиме:\t', round(criteria2, 2))   
 
-    criteria3 = GetMaxPF(checkIFlag) - nonRegularLoad
-    print('• ДДТН в нормальном режиме:\t\t', round(criteria3, 2))   
-    
-    criteria4 = GetEmergencyPF(marginP=0.92) - nonRegularLoad
-    print('• 8% Pmax запас в послеаварийном режиме:', round(criteria4, 2)) 
+    criteria2 = get_max_pf(check_v_flag, 0.7 / (1 - 0.15)) - non_regular_load
+    print('• 15% Ucr запас в нормальном режиме:\t', round(criteria2, 2))
 
-    criteria5 = GetEmergencyPF(
-        checkParams=checkVFlag, marginU=0.7/(1-0.1)) - nonRegularLoad
-    print('• 10% Ucr запас в послеаварийном режиме:', round(criteria5, 2)) 
+    criteria3 = get_max_pf(check_i_flag) - non_regular_load
+    print('• ДДТН в нормальном режиме:\t\t', round(criteria3, 2))
 
-    RastrInstance().SwapCurrentLimits()
-    criteria6 = GetEmergencyPF(checkParams=checkIFlag) - nonRegularLoad
-    RastrInstance().SwapCurrentLimits()
-    print('• АДТН в послеаварийном режиме:\t\t', round(criteria6, 2)) 
+    criteria4 = get_emergency_pf(margin_p=0.92) - non_regular_load
+    print('• 8% Pmax запас в послеаварийном режиме:', round(criteria4, 2))
+
+    criteria5 = get_emergency_pf(
+        check_params=check_v_flag, margin_u=0.7 / (1 - 0.1)) - non_regular_load
+    print('• 10% Ucr запас в послеаварийном режиме:', round(criteria5, 2))
+
+    RastrInstance().swap_current_limits()
+    criteria6 = get_emergency_pf(check_params=check_i_flag) - non_regular_load
+    RastrInstance().swap_current_limits()
+    print('• АДТН в послеаварийном режиме:\t\t', round(criteria6, 2))
 
 else:
     print('Something wrong with CMD arguments!')
-    HelpMessage()
-
+    help_message()

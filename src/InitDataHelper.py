@@ -7,126 +7,143 @@ import csv
 
 from RastrSingleton import RastrInstance
 
+
+# interface of base class of chain of responsibility
 class IDataHandler(ABC):
     @abstractmethod
-    def SetNext(self, handler: IDataHandler) -> IDataHandler:
+    def set_next(self, handler: IDataHandler) -> IDataHandler:
         pass
 
     @abstractmethod
-    def Handle(self, dataSource, data: str) -> Optional[int]:
+    def handle(self, data_source: str, data: str) -> Optional[str]:
         pass
 
 
 class AbstractHandler(IDataHandler):
     _next_handler: IDataHandler = None
 
-    def SetNext(self, handler: IDataHandler) -> IDataHandler:
+    def set_next(self, handler: IDataHandler) -> IDataHandler:
+        """
+        method sets up next handler in the chain,
+        which is called when the current handler cannot handle data
+        :param handler: next handle IDataHandler class
+        :return: next handler instance
+        """
         self._next_handler = handler
         return handler
 
     @abstractmethod
-    def Handle(self, dataSource: str, data: str) -> str:
+    def handle(self, data_source: str, data: str) -> Optional[str]:
+        """
+        pass data in next handler
+        :param data_source: source of data (data key)
+        :param data: data, path to file for example
+        :return: result of next handler executing or string error if handler was last
+        """
         if self._next_handler:
-            return self._next_handler.Handle(dataSource, data)
-        
-        return 'No data handler for ' + dataSource
+            return self._next_handler.handle(data_source, data)
+
+        return 'No data handler for ' + data_source
 
 
+# handler for .rg2 regime & regime template files
 class RegimeFilesHandler(AbstractHandler):
-    __rg2File: str = None
-    __rg2TemplateFile: str = None
+    __rg2_file: Optional[str] = None
+    __rg2_template_file: Optional[str] = None
 
-    def Handle(self, dataSource: str, data: str) -> str:
+    def handle(self, data_source: str, data: str) -> Optional[str]:
         # waiting for linked param (-rg2 + -rg2template)
-        if dataSource == "-rg2":
-            self.__rg2File = data
-            if self.__rg2TemplateFile == None:
+        if data_source == "-rg2":
+            self.__rg2_file = data
+            if self.__rg2_template_file is None:
                 return None
-        elif dataSource == "-rg2template":
-            self.__rg2TemplateFile = data
-            if self.__rg2File == None:
+        elif data_source == "-rg2template":
+            self.__rg2_template_file = data
+            if self.__rg2_file is None:
                 return None
 
-        if self.__rg2File and self.__rg2TemplateFile:
+        if self.__rg2_file and self.__rg2_template_file:
             result = RastrInstance() \
-                .Load(self.__rg2File, self.__rg2TemplateFile)
-            self.__rg2File = None
-            self.__rg2TemplateFile = None
+                .load(self.__rg2_file, self.__rg2_template_file)
+            self.__rg2_file = None
+            self.__rg2_template_file = None
             return result
         else:
-            return super().Handle(dataSource, data)
+            return super().handle(data_source, data)
 
 
+# base class for json files handlers
 class JsonFilesHandler(AbstractHandler):
 
-    def _readJson(self, path):
-        result = {}
-
+    @staticmethod
+    def _read_json(path):
         with open(path, "r") as read_file:
             result = json.load(read_file)
 
         return result
 
-    def Handle(self, dataSource: str, data: str) -> str:
-        return super().Handle(dataSource, data)
+    def handle(self, data_source: str, data: str) -> Optional[str]:
+        return super().handle(data_source, data)
 
 
+# handler for flow gates files (.json)
 class BranchGroupsFilesHandler(JsonFilesHandler):
 
-    def Handle(self, dataSource: str, data: str) -> str:
+    def handle(self, data_source: str, data: str) -> Optional[str]:
         status = None
-        if dataSource == "-bg":
-            branches = self._readJson(data)
+        if data_source == "-bg":
+            branches = self._read_json(data)
 
             for branch in branches:
-                bgNum = 1 #branches[branch].get('np', 0)
+                bg_num = 1
 
-                if bgNum not in RastrInstance().GetBranchGroups():
-                    status = RastrInstance().MakeBranchGroup(
-                        bgNum, 
-                        'MaxPFBranchGroup ' + str(bgNum))
+                if bg_num not in RastrInstance().get_branch_groups():
+                    RastrInstance().make_branch_group(
+                        bg_num,
+                        'MaxPFBranchGroup ' + str(bg_num))
 
-                status = RastrInstance().AddBranchToBranchGroup(
-                    bgNum, 
-                    branches[branch].get('ip', 0), 
+                status = RastrInstance().add_branch_to_branch_group(
+                    bg_num,
+                    branches[branch].get('ip', 0),
                     branches[branch].get('iq', 0))
 
             return status
         else:
-            return super().Handle(dataSource, data)
+            return super().handle(data_source, data)
 
 
+# handler for outages files (.json)
 class OutagesFilesHandler(JsonFilesHandler):
 
-    def Handle(self, dataSource: str, data: str) -> str:
-        if dataSource == "-outages":
-            return str(self._readJson(data)) #RastrInstance().SetOutages(self._readJson(data))
+    def handle(self, data_source: str, data: str) -> Optional[str]:
+        if data_source == "-outages":
+            return str(self._read_json(data))
         else:
-            return super().Handle(dataSource, data)
+            return super().handle(data_source, data)
 
 
+# handler for power flow node variance vector files (.csv)
 class PFVVFilesHandler(AbstractHandler):
-    __nodeIdMap: dict = {}
+    __node_id_map: dict = {}
 
-    def Handle(self, dataSource: str, data: str) -> str:
+    def handle(self, data_source: str, data: str) -> Optional[str]:
         status = None
-        if dataSource == "-pfvv":
-            with open(data) as csvfile:
-                reader = csv.DictReader(csvfile)
+        if data_source == "-pfvv":
+            with open(data) as csv_file:
+                reader = csv.DictReader(csv_file)
 
-                id = -1
                 for row in reader:
                     node = row.get('node', 0)
-                    if node not in self.__nodeIdMap:
-                        id, status = RastrInstance().AddNodePFVV(node, row.get('tg', 0))
-                        self.__nodeIdMap[node] = id
+                    if node not in self.__node_id_map:
+                        node_id, status = RastrInstance().add_node_pfvv(node, row.get('tg', 0))
+                        self.__node_id_map[node] = node_id
                     else:
-                        id = self.__nodeIdMap[node]
-                        
+                        node_id = self.__node_id_map[node]
+
                     variable = row.get('variable', 'pn')
                     status = RastrInstance() \
-                        .SetNodePFVVParam(id, variable, float(row.get('value', 0)))
+                        .set_node_pfvv_param(node_id, variable, float(row.get('value', 0)))
 
             return status
         else:
-            return super().Handle(dataSource, data)
+            return super().handle(data_source, data)
