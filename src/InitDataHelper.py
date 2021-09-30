@@ -141,8 +141,8 @@ class PFVVFilesHandler(AbstractHandler):
                         node_id = self.__node_id_map[node]
 
                     variable = row.get('variable', 'pn')
-                    status = RastrInstance() \
-                        .set_node_pfvv_param(node_id, variable, float(row.get('value', 0)))
+                    status = RastrInstance() .set_node_pfvv_param(
+                        node_id, variable, float(row.get('value', 0)))
 
             return status
         else:

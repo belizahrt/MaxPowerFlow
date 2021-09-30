@@ -21,7 +21,8 @@ class RastrInstance(metaclass=RastrMeta):
     def __init__(self):
         self.__rastr = win32com.client.Dispatch('Astra.Rastr')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
-        self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
+        self.__rastr.NewFile(
+            'assets\\rastr_templates\\траектория утяжеления.ut2')
 
     def reset_workspace(self) -> None:
         """
@@ -29,7 +30,8 @@ class RastrInstance(metaclass=RastrMeta):
         """
         self.__rastr.NewFile('assets\\rastr_templates\\режим.rg2')
         self.__rastr.NewFile('assets\\rastr_templates\\сечения.sch')
-        self.__rastr.NewFile('assets\\rastr_templates\\траектория утяжеления.ut2')
+        self.__rastr.NewFile(
+            'assets\\rastr_templates\\траектория утяжеления.ut2')
         self.__branch_groups.clear()
 
     def get_branch_groups(self) -> dict:
@@ -73,9 +75,14 @@ class RastrInstance(metaclass=RastrMeta):
     # tests
     def save_all(self, file: str) -> Optional[str]:
         try:
-            self.__rastr.Save(file + '.rg2', 'assets\\rastr_templates\\режим.rg2')
-            self.__rastr.Save(file + '.sch', 'assets\\rastr_templates\\сечения.sch')
-            self.__rastr.Save(file + '.ut2', 'assets\\rastr_templates\\траектория утяжеления.ut2')
+            self.__rastr.Save(
+                file + '.rg2',
+                'assets\\rastr_templates\\режим.rg2')
+            self.__rastr.Save(file + '.sch',
+                              'assets\\rastr_templates\\сечения.sch')
+            self.__rastr.Save(
+                file + '.ut2',
+                'assets\\rastr_templates\\траектория утяжеления.ut2')
         except Exception as e:
             return e
 
@@ -125,7 +132,7 @@ class RastrInstance(metaclass=RastrMeta):
         """
         add node to 'ut_node' table (new component of pfvv)
         :param node_num: number of node
-        :param recalc_tan: 0 - no power recalc consider power coeff (tan), 
+        :param recalc_tan: 0 - no power recalc consider power coeff (tan),
             1 - recalc power consider tan
         :return: tuple <new id in table (-1 if adding failed), None (COM exception text if failed)>
         """
@@ -163,9 +170,9 @@ class RastrInstance(metaclass=RastrMeta):
         :return: float value of sum power flow in branch group
         """
         try:
-            return float(self.__rastr.Tables('sechen') \
+            return float(self.__rastr.Tables('sechen')
                          .Cols('psech').Z(self.__branch_groups[bg_num]))
-        except:
+        except BaseException:
             return None
 
     def power_flow(self, param: str = '') -> Optional[int]:
@@ -182,7 +189,7 @@ class RastrInstance(metaclass=RastrMeta):
         """
         try:
             return int(self.__rastr.rgm(param))
-        except:
+        except BaseException:
             return None
 
     def calc_max_power_flow(self, iters_count: int = 100,
@@ -193,14 +200,16 @@ class RastrInstance(metaclass=RastrMeta):
         :param iters_count: maximum iterations count
         :param check_parameters: hex byte flag to set up control params of max PF calculating
         (001 - current, 010 - powerflow, 100 - voltage)
-        :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
-        :return: 0 - success, -1 - failed 
+        :param margin_u: fraction from the nominal voltage, at which PF calculating stops
+        :return: 0 - success, -1 - failed
         """
         try:
             # setup pf options in table com_regim
-            self.__rastr.Tables('com_regim').Cols('dv_min').SetZ(0, float(margin_u))
+            self.__rastr.Tables('com_regim').Cols(
+                'dv_min').SetZ(0, float(margin_u))
             # setup utr options in table ut_common
-            self.__rastr.Tables('ut_common').Cols('iter').SetZ(0, int(iters_count))
+            self.__rastr.Tables('ut_common').Cols(
+                'iter').SetZ(0, int(iters_count))
 
             self.__rastr.Tables('ut_common').Cols('enable_contr') \
                 .SetZ(0, check_parameters != 0)
@@ -222,9 +231,14 @@ class RastrInstance(metaclass=RastrMeta):
 
         return 0
 
-    def change_branch_state(self, ip: int, iq: int, np: int, state: str) -> int:
+    def change_branch_state(
+            self,
+            ip: int,
+            iq: int,
+            np: int,
+            state: str) -> int:
         """
-        change state of branch via 'sta' 'vetv' table field 
+        change state of branch via 'sta' 'vetv' table field
         :param ip: branch begin node
         :param iq: branch end node
         :param np: parallel branch number
@@ -233,9 +247,11 @@ class RastrInstance(metaclass=RastrMeta):
         """
         try:
             vetv = self.__rastr.Tables('vetv')
-            vetv.SetSel('ip={_ip}&iq={_iq}&np={_np}'.format(_ip=ip, _iq=iq, _np=np))
+            vetv.SetSel(
+                'ip={_ip}&iq={_iq}&np={_np}'.format(
+                    _ip=ip, _iq=iq, _np=np))
             vetv.Cols('sta').Calc(state)
-        except:
+        except BaseException:
             return -1
         return 0
 
@@ -252,6 +268,6 @@ class RastrInstance(metaclass=RastrMeta):
 
                 self.__rastr.Tables('vetv').cols('i_dop').SetZ(i, emergency_i)
                 self.__rastr.Tables('vetv').cols('i_dop_av').SetZ(i, normal_i)
-        except:
+        except BaseException:
             return -1
         return 0

@@ -2,6 +2,7 @@ from RastrSingleton import RastrInstance
 import InitDataHelper
 
 import sys
+import time
 
 
 outages: dict = {}
@@ -38,8 +39,8 @@ def do_initialize_data(argv: [str]) -> int:
     outages_files_handler = InitDataHelper.OutagesFilesHandler()
     pfvv_files_handler = InitDataHelper.PFVVFilesHandler()
 
-    rg_files_handler.set_next(bg_files_handler).set_next(outages_files_handler) \
-        .set_next(pfvv_files_handler)
+    rg_files_handler.set_next(bg_files_handler).set_next(
+        outages_files_handler) .set_next(pfvv_files_handler)
 
     for key in params:
         status = rg_files_handler.handle(key, params[key])
@@ -60,7 +61,8 @@ def help_message() -> None:
     prints help message of usage format
     """
     print('Just use this CMD template: ')
-    print('MaxPowerFlow.py [-KEY1] <ARG1> [-KEY2] <ARG2> ..., where KEY and ARG:')
+    print('MaxPowerFlow.py [-KEY1] <ARG1> [-KEY2] <ARG2> ..., '
+        'where KEY and ARG:')
     print('\t -rg2 <path> - regime file path')
     print('\t -rg2template <path> - regime template file path')
     print('\t -bg <path> - branch group (json) file path')
@@ -81,11 +83,14 @@ check_v_flag: int = 0x100
 
 def get_max_pf(check_params: int = 0x000, margin_u: float = 0.5) -> float:
     """
-    wrapper method for calculate and extract value of max transmission power flow
+    wrapper method for calculate and extract value of max transmission
+    power flow
     ! restore origin PF state
-    :param check_params: hex byte flag to set up control params of max PF calculating
+    :param check_params: hex byte flag to set up control params of
+    max PF calculating
         (001 - current, 010 - powerflow, 100 - voltage)
-    :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
+    :param margin_u: fraction from the nominal voltage, at which PF
+    calculating stops
     :return: abs value of power flow in branch group at id = 1
     """
     global max_iters
@@ -100,14 +105,17 @@ def get_emergency_pf(check_params: int = 0x000,
                      margin_u: float = 0.5,
                      margin_p: float = 1) -> float:
     """
-    wrapper method for calculate and extract value of emergency (cause ref. disturbances) 
-    transmission power flow
+    wrapper method for calculate and extract value of emergency
+    (cause ref. disturbances) transmission power flow
     ! restore origin PF state
-    :param check_params: hex byte flag to set up control params of max PF calculating
+    :param check_params: hex byte flag to set up control params of
+    max PF calculating
         (001 - current, 010 - powerflow, 100 - voltage)
-    :param margin_u: fraction from the nominal voltage, at which PF calculating stops 
-    :param margin_p: fraction of P in emergency PF should be roll back before restore PF
-    :return: min abs value as result of outages permutation 
+    :param margin_u: fraction from the nominal voltage, at which
+    PF calculating stops
+    :param margin_p: fraction of P in emergency PF should be roll back
+    before restore PF
+    :return: min abs value as result of outages permutation
         of power flow in branch group at id = 1
     """
     global outages
@@ -122,7 +130,8 @@ def get_emergency_pf(check_params: int = 0x000,
         pos = RastrInstance().get_toggle_positions_count()
 
         lim_p = abs(RastrInstance().get_branch_group_pf_value(1))
-        while abs(RastrInstance().get_branch_group_pf_value(1)) > margin_p * lim_p:
+        while abs(RastrInstance().get_branch_group_pf_value(1)
+                  ) > margin_p * lim_p:
             pos -= 1
             RastrInstance().restore_pf_toggle(pos)
 
