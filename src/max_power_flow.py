@@ -6,8 +6,8 @@ module_path = os.path.abspath(os.getcwd())
 if module_path not in sys.path:       
     sys.path.append(module_path)
 
-from RastrSingleton import RastrInstance
-import InitDataHelper
+from rastr_singleton import RastrInstance
+import init_data_helper
 
 
 outages: dict = {}
@@ -41,15 +41,15 @@ def cmd_params_assert(params: [str]) -> bool:
     return sorted(template) == sorted(params)
 
 
-def build_data_handler() -> InitDataHelper.IDataHandler:
+def build_data_handler() -> init_data_helper.IDataHandler:
     """
     function builds data handler
     :return: Data handler interface with initialized chain
     """
-    rg_files_handler = InitDataHelper.RegimeFilesHandler()
-    bg_files_handler = InitDataHelper.BranchGroupsFilesHandler()
-    outages_files_handler = InitDataHelper.OutagesFilesHandler()
-    pfvv_files_handler = InitDataHelper.PFVVFilesHandler()
+    rg_files_handler = init_data_helper.RegimeFilesHandler()
+    bg_files_handler = init_data_helper.BranchGroupsFilesHandler()
+    outages_files_handler = init_data_helper.OutagesFilesHandler()
+    pfvv_files_handler = init_data_helper.PFVVFilesHandler()
 
     rg_files_handler \
         .set_next(bg_files_handler) \

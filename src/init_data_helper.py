@@ -5,7 +5,7 @@ from typing import Optional
 import json
 import csv
 
-from RastrSingleton import RastrInstance
+from rastr_singleton import RastrInstance
 
 
 # interface of base class of chain of responsibility

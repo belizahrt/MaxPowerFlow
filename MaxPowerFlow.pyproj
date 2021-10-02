@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4cf3805c-6378-4d3c-a34e-67ff5a7a7e7f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>src\MaxPowerFlow.py</StartupFile>
+    <StartupFile>src\max_power_flow.py</StartupFile>
     <SearchPath>..\MaxPowerFlow;src;Tests</SearchPath>
     <WorkingDirectory>src</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -28,11 +28,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="src\MaxPowerFlow.py" />
-    <Compile Include="src\InitDataHelper.py">
+    <Compile Include="src\max_power_flow.py" />
+    <Compile Include="src\init_data_helper.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="src\RastrSingleton.py">
+    <Compile Include="src\rastr_singleton.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Tests\test_1.py">
