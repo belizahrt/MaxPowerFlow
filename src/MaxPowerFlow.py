@@ -1,8 +1,13 @@
+import sys
+import os
+
+module_path = os.path.abspath(os.getcwd())    
+
+if module_path not in sys.path:       
+    sys.path.append(module_path)
+
 from RastrSingleton import RastrInstance
 import InitDataHelper
-
-import sys
-import time
 
 
 outages: dict = {}
@@ -17,7 +22,7 @@ def read_cmd_line(argv: [str]) -> dict:
     params = {}
 
     i = 1
-    while i < len(argv):
+    while i < len(argv) - 1:
         if argv[i + 1] not in params:
             params[argv[i]] = argv[i + 1]
         i += 2
