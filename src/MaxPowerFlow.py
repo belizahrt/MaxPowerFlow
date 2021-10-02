@@ -30,6 +30,35 @@ def read_cmd_line(argv: [str]) -> dict:
     return params
 
 
+def cmd_params_assert(params: [str]) -> bool:
+    """
+    function asserts cmd params and necessary params in template
+    :param params: list of cmd arguments
+    :return: True if lists have the same values
+    """
+    template = ['-rg2', '-rg2template', '-bg', '-outages', '-pfvv']
+
+    return sorted(template) == sorted(params)
+
+
+def build_data_handler() -> InitDataHelper.IDataHandler:
+    """
+    function builds data handler
+    :return: Data handler interface with initialized chain
+    """
+    rg_files_handler = InitDataHelper.RegimeFilesHandler()
+    bg_files_handler = InitDataHelper.BranchGroupsFilesHandler()
+    outages_files_handler = InitDataHelper.OutagesFilesHandler()
+    pfvv_files_handler = InitDataHelper.PFVVFilesHandler()
+
+    rg_files_handler \
+        .set_next(bg_files_handler) \
+        .set_next(outages_files_handler) \
+        .set_next(pfvv_files_handler)
+
+    return rg_files_handler
+
+
 def do_initialize_data(argv: [str]) -> int:
     """
     function extracts init data from cmd args via helper
@@ -37,18 +66,14 @@ def do_initialize_data(argv: [str]) -> int:
     :return: 0 - if init ok, -1 - initialization failed
     """
     global outages
+
     params = read_cmd_line(argv)
+    if not cmd_params_assert(params.keys()):
+        return -1
 
-    rg_files_handler = InitDataHelper.RegimeFilesHandler()
-    bg_files_handler = InitDataHelper.BranchGroupsFilesHandler()
-    outages_files_handler = InitDataHelper.OutagesFilesHandler()
-    pfvv_files_handler = InitDataHelper.PFVVFilesHandler()
-
-    rg_files_handler.set_next(bg_files_handler).set_next(
-        outages_files_handler) .set_next(pfvv_files_handler)
-
+    data_handler = build_data_handler()
     for key in params:
-        status = rg_files_handler.handle(key, params[key])
+        status = data_handler.handle(key, params[key])
 
         if key == '-outages':
             outages = eval(status)

@@ -36,14 +36,16 @@ class RastrInstance(metaclass=RastrMeta):
 
     def get_branch_groups(self) -> dict:
         """
-        get map of branch groups in format {num of bg: id of bg in 'sechen' table}
+        get map of branch groups in format
+        {num of bg: id of bg in 'sechen' table}
         :return: private object
         """
         return self.__branch_groups
 
     def load(self, file: str, template: str) -> Optional[str]:
         """
-        load file by path with template and replace corresponding opened file in workspace
+        load file by path with template and replace corresponding opened
+        file in workspace
         :param file: file path
         :param template: template path
         :return: None - file was load successfully or COM Exception string
@@ -55,10 +57,24 @@ class RastrInstance(metaclass=RastrMeta):
 
         return None
 
+    def new(self, template: str) -> Optional[str]:
+        """
+        adding new template file with replaing old data
+        :param template: template path
+        :return: None - file was created successfully or COM Exception string
+        """
+        try:
+            self.__rastr.NewFile(template)
+        except Exception as e:
+            return e
+
+        return None
+
     def restore_pf_toggle(self, position: int = 1) -> None:
         """
         get rastr PF toggle (to switch beetween calculating steps)
-        :param position: number of calculating step (from 1 to get_toggle_positions_count)
+        :param position: number of calculating step
+        (from 1 to get_toggle_positions_count)
             position = 1 is origin PF
         """
         toggle = self.__rastr.GetToggle()
@@ -75,13 +91,11 @@ class RastrInstance(metaclass=RastrMeta):
     # tests
     def save_all(self, file: str) -> Optional[str]:
         try:
-            self.__rastr.Save(
-                file + '.rg2',
+            self.__rastr.Save(file + '.rg2',
                 'assets\\rastr_templates\\режим.rg2')
             self.__rastr.Save(file + '.sch',
-                              'assets\\rastr_templates\\сечения.sch')
-            self.__rastr.Save(
-                file + '.ut2',
+                'assets\\rastr_templates\\сечения.sch')
+            self.__rastr.Save(file + '.ut2',
                 'assets\\rastr_templates\\траектория утяжеления.ut2')
         except Exception as e:
             return e
@@ -134,7 +148,8 @@ class RastrInstance(metaclass=RastrMeta):
         :param node_num: number of node
         :param recalc_tan: 0 - no power recalc consider power coeff (tan),
             1 - recalc power consider tan
-        :return: tuple <new id in table (-1 if adding failed), None (COM exception text if failed)>
+        :return: tuple <new id in table (-1 if adding failed), None
+        (COM exception text if failed)>
         """
         i = -1
         try:
@@ -198,9 +213,11 @@ class RastrInstance(metaclass=RastrMeta):
         """
         calculate maximum transmission power flow along the pfvv
         :param iters_count: maximum iterations count
-        :param check_parameters: hex byte flag to set up control params of max PF calculating
+        :param check_parameters: hex byte flag to set up control params
+        of max PF calculating
         (001 - current, 010 - powerflow, 100 - voltage)
-        :param margin_u: fraction from the nominal voltage, at which PF calculating stops
+        :param margin_u: fraction from the nominal voltage,
+        at which PF calculating stops
         :return: 0 - success, -1 - failed
         """
         try:
@@ -246,11 +263,11 @@ class RastrInstance(metaclass=RastrMeta):
         :return: 0 - if no com exception, -1 - com exception raised
         """
         try:
-            vetv = self.__rastr.Tables('vetv')
-            vetv.SetSel(
+            branches = self.__rastr.Tables('vetv')
+            branches.SetSel(
                 'ip={_ip}&iq={_iq}&np={_np}'.format(
                     _ip=ip, _iq=iq, _np=np))
-            vetv.Cols('sta').Calc(state)
+            branches.Cols('sta').Calc(state)
         except BaseException:
             return -1
         return 0
@@ -262,12 +279,13 @@ class RastrInstance(metaclass=RastrMeta):
         :return: 0 - if no com exception, -1 - com exception raised
         """
         try:
-            for i in range(0, self.__rastr.Tables('vetv').size):
-                normal_i = self.__rastr.Tables('vetv').cols('i_dop').Z(i)
-                emergency_i = self.__rastr.Tables('vetv').cols('i_dop_av').Z(i)
+            branches = self.__rastr.Tables('vetv')
+            for i in range(0, branches.size):
+                normal_i = branches.cols('i_dop').Z(i)
+                emergency_i = branches.cols('i_dop_av').Z(i)
 
-                self.__rastr.Tables('vetv').cols('i_dop').SetZ(i, emergency_i)
-                self.__rastr.Tables('vetv').cols('i_dop_av').SetZ(i, normal_i)
+                branches.cols('i_dop').SetZ(i, emergency_i)
+                branches.cols('i_dop_av').SetZ(i, normal_i)
         except BaseException:
             return -1
         return 0
